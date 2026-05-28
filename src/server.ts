@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { SITE_URL } from "./lib/seo";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -22,6 +23,20 @@ function brandedErrorResponse(): Response {
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function redirectWorkersHost(request: Request): Response | null {
+  const url = new URL(request.url);
+  if (!url.hostname.endsWith(".workers.dev")) return null;
+
+  const destination = new URL(`${url.pathname}${url.search}`, SITE_URL);
+  return new Response(null, {
+    status: 301,
+    headers: {
+      location: destination.toString(),
+      "x-robots-tag": "noindex, nofollow",
+    },
   });
 }
 
@@ -69,6 +84,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const redirect = redirectWorkersHost(request);
+      if (redirect) return redirect;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

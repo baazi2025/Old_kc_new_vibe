@@ -6,9 +6,16 @@ import { OnlineMembersPanel } from "@/components/OnlineMembersPanel";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/hooks/useAuth";
+import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/dm")({
-  head: () => ({ meta: [{ title: "Direct Messages — Vibe Malayali" }] }),
+  head: () =>
+    seo({
+      title: "Malayali Direct Messages | Private Friend Chats",
+      description:
+        "Send private messages to Malayali friends from Vibemalayali Chat with profile controls and DM privacy settings.",
+      path: "/dm",
+    }),
   component: DMList,
 });
 

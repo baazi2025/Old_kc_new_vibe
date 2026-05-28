@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useLocation,
   useRouter,
   HeadContent,
   Scripts,
@@ -10,6 +12,9 @@ import {
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { trackVisit } from "@/lib/analytics";
+import { OG_IMAGE, SITE_URL } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -73,24 +78,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "VibeWave Community is a futuristic Malayalam social chat web app with addictive \"vibe coding\" and premium neon UI." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "VibeWave Community is a futuristic Malayalam social chat web app with addictive \"vibe coding\" and premium neon UI." },
+      { title: "Malayali Community Platform | Chat Rooms, Radio & Friends Worldwide" },
+      { name: "description", content: "Join Vibemalayali Chat — a nostalgic Malayali community platform inspired by KC Chat where users can join chat rooms, listen to radio, share voice notes, play mini games, and connect with Malayalis worldwide." },
+      { name: "author", content: "Vibemalayali Chat" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:title", content: "Vibemalayali Chat | Malayali Community Platform" },
+      { property: "og:description", content: "Chat with Malayalis worldwide, join live rooms, listen to radio, share voice notes, and enjoy a nostalgic KC-style community experience." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "VibeWave Community is a futuristic Malayalam social chat web app with addictive \"vibe coding\" and premium neon UI." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b8d67812-fb6c-4c35-b0d3-d5991c7836a7/id-preview-07db3aca--6f6abda7-fac9-4f59-8244-a2d9443c97c3.lovable.app-1778257610406.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b8d67812-fb6c-4c35-b0d3-d5991c7836a7/id-preview-07db3aca--6f6abda7-fac9-4f59-8244-a2d9443c97c3.lovable.app-1778257610406.png" },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Vibemalayali Chat | Malayali Community Platform" },
+      { name: "twitter:description", content: "Chat rooms, radio, voice notes, moods, friendships, and nostalgic Malayali community vibes worldwide." },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "canonical", href: SITE_URL },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "apple-touch-icon", href: "/favicon.svg" },
     ],
   }),
   shellComponent: RootShell,
@@ -115,6 +126,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    trackVisit(location.pathname, user?.id);
+  }, [location.pathname, user?.id]);
 
   return (
     <QueryClientProvider client={queryClient}>

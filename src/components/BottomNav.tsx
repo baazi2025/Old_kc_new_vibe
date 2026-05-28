@@ -1,11 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, MessageCircle, VenetianMask, Gift, Wallet } from "lucide-react";
+import { Home, MessageCircle, Gift, Wallet } from "lucide-react";
 import { DesktopSidebar } from "./DesktopSidebar";
 
 const items = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/chat", icon: MessageCircle, label: "Chat" },
-  { to: "/confessions", icon: VenetianMask, label: "Secrets" },
   { to: "/gifts", icon: Gift, label: "Gifts" },
   { to: "/wallet", icon: Wallet, label: "Wallet" },
 ] as const;

@@ -1,313 +1,314 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import type { UIEvent } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
+import { CommunityPolicyModal } from "@/components/CommunityPolicyModal";
+import { KcWelcomeOverlay } from "@/components/KcWelcomeOverlay";
+import { GuestExpiryNotice } from "@/components/GuestExpiryNotice";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Crown, Heart, Loader2, Sparkles, Users } from "lucide-react";
+import { cleanUsername, ensureUsernameAvailable } from "@/lib/username";
+import { ensureProfileForUser } from "@/lib/authProfile";
+import { errorMessage } from "@/lib/errorMessage";
+import { ArrowRight, Camera, Crown, Gift, Heart, Loader2, Mic, Sparkles, Trophy, Users, WalletCards, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { seo } from "@/lib/seo";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Welcome to the Vibe" },
-      {
-        name: "description",
-        content: "Choose Friends vibe or Romance vibe and join as a Prime Viber or Guest vibe.",
-      },
-      { property: "og:title", content: "Welcome to the Vibe" },
-      {
-        property: "og:description",
-        content: "Choose Friends vibe or Romance vibe and join as a Prime Viber or Guest vibe.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Malayali Community Platform | Chat Rooms, Radio & Friends Worldwide",
+      description:
+        "Join Vibemalayali Chat — a nostalgic KC Chat-inspired Malayali community platform to chat, join rooms, listen to radio, share voice notes, play mini games, and connect with Malayalis worldwide.",
+      path: "/",
+    }),
   component: Home,
 });
 
-const VIBES = [
+type Stage = "hero" | "entry" | "rooms";
+type RoomId = "friends" | "romance";
+
+const ROOMS = [
   {
-    id: "friends",
-    title: "Friends vibe",
-    sub: "Meet friendly people and start easy conversations.",
-    icon: Users,
-    accent: "from-cyan-400 to-sky-500",
+    id: "friends" as const,
+    emoji: "💫",
+    title: "Friends Vibing",
+    sub: "Friendly Malayalam + English room for daily talks, jokes, radio, voice notes, and mini games.",
+    count: "1 live",
+    glow: "from-sky-400/25 to-cyan-300/10",
   },
   {
-    id: "romance",
-    title: "Romance vibe",
-    sub: "A softer room for sweet, respectful connection.",
-    icon: Heart,
-    accent: "from-rose-400 to-pink-500",
+    id: "romance" as const,
+    emoji: "💘",
+    title: "Romance Vibing",
+    sub: "A softer KC-style room for sweet chats, respectful connections, and late-night vibes.",
+    count: "1 live",
+    glow: "from-pink-400/25 to-rose-300/10",
   },
-] as const;
-
-const CHAOS_LEGENDS = [
-  "👑 PL — ladies’ favourite since prehistoric internet days",
-  "✨ AM — certified aura supplier",
-  "🎤 GG — singer who never skipped a mic night",
-  "❄️ Frosty — vanished without explanation… probably still typing somewhere",
-  "🇲🇱 Sathyan — official Malayalam department",
-  "😈 Sathan — management still monitoring him carefully",
-  "🎶 Chellamma — super singer girl of the century",
-  "🫧 Broken Angel — bubbly energy overload",
-  "🎵 Mastani — northy singer girl with midnight vibes",
-  "🐍 Rattles — dangerous after 11 PM",
-  "🌀 Zia & Siya — double trouble combo pack",
-  "🦠 Covidian — survived every online era somehow",
-  "👻 Paavam Jinn — emotionally available ghost",
-  "🌧️ Blue Rain — Sathans partner in crime",
-  "✨ Chaithra — calm outside, chaos inside",
-  "🚨 F37 — nobody still knows what the “F” means",
-  "😎 Super Cool Paavam VIP — VIP by emotions, not by money",
-  "🎙️ CM — singer by talent, storyteller by destiny",
-  "🌫️ Mist — permanently mysterious… even Google can’t explain",
-  "📖 Eware — philosophy department + emotional singing combo pack",
-  "😎 Vishnu — online presence stronger than WiFi signals",
-  "🎨 Masterpiece — behaves like limited edition artwork",
-  "🎧 Shaaz — enters quietly, leaves with emotional damage",
-  "🇦🇪 Rahul Dubai — unofficial Dubai branch manager",
-  "🗿 BHeegaran — fear level increases when typing starts",
-  "🌸 Gopika — calm voice, dangerous roasting skills",
-  "✨ Samantha — elegant outside, chaos creator inside",
-  "🦋 Tessa — sweet until provoked after midnight",
-  "🙏 Kripa — spiritually calm during maximum chat violence",
-  "❄️ Snowy — cold replies, warm heart… sometimes",
 ];
 
-const CHAOS_WARNINGS = [
-  "Random midnight singing",
-  "Emotional damage",
-  "Fake fights that become real fights",
-  "Malayalam chaos",
-  "People falling in fake love",
-  "Unexpected friendships",
-  "“Who are you?” moments",
-  "Users disappearing and returning after 8 months saying “hi”",
-  "Someone typing “gn” and staying online for 2 more hours",
-  "Philosophical debates at 3 AM",
-  "Voice notes nobody asked for",
-  "Sudden roast sessions",
-  "Ghost typing activities 👻",
+const MOODS = ["Chill", "Happy", "RJ mood", "Missing KC", "Night owl", "Just watching"];
+
+const EARN_CARDS = [
+  { icon: Sparkles, title: "Daily login", value: "50 coins" },
+  { icon: Mic, title: "Voice note", value: "25 coins" },
+  { icon: Camera, title: "Profile setup", value: "100 coins" },
+  { icon: Zap, title: "First message", value: "10 coins" },
+  { icon: Trophy, title: "Streaks", value: "bonus" },
+  { icon: Gift, title: "Gifts/activity", value: "rewards" },
 ];
+
+const COUPONS = ["Amazon", "Swiggy", "Zomato", "Myntra"];
 
 function Home() {
   const nav = useNavigate();
-  const [entered, setEntered] = useState(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("vibes") === "1"
-  );
-  const [showChaosWelcome, setShowChaosWelcome] = useState(false);
-  const [scrollUnlocked, setScrollUnlocked] = useState(false);
-  const [selected, setSelected] = useState<(typeof VIBES)[number]["id"]>("friends");
-  const [guestLoading, setGuestLoading] = useState(false);
+  const { profile } = useAuth();
+  const [stage, setStage] = useState<Stage>("hero");
+  const [selected, setSelected] = useState<RoomId>("friends");
+  const [name, setName] = useState("");
   const [gender, setGender] = useState("");
-  const [dob, setDob] = useState("");
+  const [birthYear, setBirthYear] = useState("");
+  const [mood, setMood] = useState("Chill");
+  const [policyAction, setPolicyAction] = useState<"guest" | "prime" | null>(null);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function guestLogin() {
-    if (!gender) return toast.error("Please choose gender");
-    if (!dob) return toast.error("Please enter date of birth");
-    setGuestLoading(true);
-    const guestName = `Guest_${Math.random().toString(36).slice(2, 7)}`;
-    const { error } = await supabase.auth.signInAnonymously({
-      options: { data: { username: guestName, avatar_emoji: selected === "romance" ? "💞" : "🎉", gender, dob } },
-    });
-    setGuestLoading(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success(`Vibing as ${guestName}`);
+  function enterRoom(room: RoomId) {
+    localStorage.setItem("vibe-selected-room", room);
     nav({ to: "/chat" });
   }
 
-  function openChaosWelcome() {
-    setScrollUnlocked(false);
-    setShowChaosWelcome(true);
+  async function continueGuest() {
+    const cleanName = cleanUsername(name);
+    if (cleanName.length < 2) return toast.error("Please enter your display name");
+    if (birthYear) {
+      const year = Number(birthYear);
+      const age = new Date().getFullYear() - year;
+      if (!year || age < 18) return toast.error("18+ only");
+    }
+
+    setLoading(true);
+    try {
+    const availability = await ensureUsernameAvailable(cleanName);
+    if (!availability.ok) {
+      setLoading(false);
+      toast.error(availability.message);
+      return;
+    }
+
+    const dob = birthYear ? `${birthYear}-01-01` : null;
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: {
+        data: {
+          username: availability.username,
+          display_name: availability.username,
+          avatar_emoji: selected === "romance" ? "💘" : "💫",
+          gender: gender || null,
+          dob,
+          mood_text: mood,
+          status_text: mood,
+        },
+      },
+    });
+    if (error) {
+      setLoading(false);
+      return toast.error(`Guest signup failed: ${error.message}`);
+    }
+    if (data.user) {
+      const profileResult = await ensureProfileForUser(data.user, {
+        username: availability.username,
+        display_name: availability.username,
+        avatar_emoji: selected === "romance" ? "💘" : "💫",
+        gender: gender || null,
+        dob,
+        mood_text: mood,
+        status_text: mood,
+        is_guest: true,
+      });
+      console.info("[home-guest:profile]", {
+        userId: data.user.id,
+        created: profileResult.created,
+        error: profileResult.error?.message ?? null,
+      });
+      if (profileResult.error) {
+        setLoading(false);
+        return toast.error(`Guest created, but profile save failed: ${profileResult.error.message}`);
+      }
+    }
+    setLoading(false);
+    toast.success(`Welcome ${availability.username}`);
+    setStage("rooms");
+    } catch (error) {
+      console.error("[home-guest:error]", error);
+      toast.error(errorMessage(error, "Guest login failed"));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleChaosScroll(event: UIEvent<HTMLDivElement>) {
-    const el = event.currentTarget;
-    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 12;
-    if (!reachedBottom || scrollUnlocked) return;
-    setScrollUnlocked(true);
-    setTimeout(() => {
-      setShowChaosWelcome(false);
-      setEntered(true);
-    }, 650);
+  function acceptPolicy() {
+    const action = policyAction;
+    setPolicyAction(null);
+    if (action === "prime") nav({ to: "/login" });
+    if (action === "guest") void continueGuest();
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden grid-bg">
+    <div className="relative min-h-screen overflow-hidden bg-[#050814] text-white">
       <AmbientOrbs />
+      <KcWelcomeOverlay
+        open={welcomeOpen}
+        onClose={() => setWelcomeOpen(false)}
+        onContinue={() => {
+          setWelcomeOpen(false);
+          setStage("entry");
+        }}
+      />
+      <CommunityPolicyModal open={policyAction !== null} onClose={() => setPolicyAction(null)} onAccept={acceptPolicy} />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(14,165,233,0.20),transparent_34%),radial-gradient(circle_at_80%_16%,rgba(236,72,153,0.18),transparent_32%)]" />
 
-      {showChaosWelcome && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/86 px-3 pb-4 pt-12 backdrop-blur-md sm:items-center sm:py-6">
-          <div className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/12 bg-slate-950/96 shadow-2xl shadow-slate-950/70">
-            <div className="border-b border-white/10 bg-gradient-to-r from-sky-500/18 via-fuchsia-500/14 to-amber-300/12 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-200">Before you enter</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                🌙 Welcome Back to the Chaos Room™
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Please stand silently for 3 seconds in tribute to the legendary chatroom souls who once ruled the nights 👀
-              </p>
-            </div>
-
-            <div onScroll={handleChaosScroll} className="min-h-0 flex-1 overflow-y-auto p-4 no-scrollbar">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {CHAOS_LEGENDS.map((legend) => (
-                  <div key={legend} className="rounded-2xl border border-white/10 bg-white/7 px-3 py-2 text-xs font-bold leading-5 text-slate-100">
-                    {legend}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
-                <p className="text-sm font-black text-amber-200">⚠️ Warning:</p>
-                <p className="mt-1 text-xs font-bold text-slate-300">This room may contain:</p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {CHAOS_WARNINGS.map((warning) => (
-                    <div key={warning} className="rounded-xl bg-slate-950/45 px-3 py-2 text-xs leading-5 text-slate-200">
-                      • {warning}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="h-16" />
-            </div>
-
-            <div className="border-t border-white/10 bg-slate-950/90 p-4 text-center">
-              <p className={`text-xs font-bold transition ${scrollUnlocked ? "text-emerald-300" : "text-slate-300"}`}>
-                {scrollUnlocked
-                  ? "Entering the vibe..."
-                  : "Scroll the full message to enter. Mental stability check in progress."}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-6">
-        <div className="flex items-center justify-between">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6">
+        <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-hero shadow-glow">
-              <Sparkles size={18} className="text-white" />
-            </div>
-            <p className="text-sm font-bold">
-              Vibe<span className="text-gradient">Malayali</span>
-            </p>
+            <span className="grid size-10 place-items-center rounded-2xl bg-hero shadow-glow">
+              <Sparkles size={18} />
+            </span>
+            <p className="text-sm font-black">Vibe<span className="text-gradient">Malayali</span></p>
           </div>
-          {entered && (
-            <button
-              type="button"
-              onClick={() => setEntered(false)}
-              className="rounded-full glass px-4 py-2 text-xs font-semibold text-muted-foreground"
-            >
+          {stage !== "hero" && (
+            <button type="button" onClick={() => setStage(stage === "rooms" ? "entry" : "hero")} className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs font-black text-slate-200">
               Back
             </button>
           )}
-        </div>
+        </header>
 
-        {!entered ? (
-          <button
-            type="button"
-            onClick={openChaosWelcome}
-            className="group flex flex-1 flex-col items-center justify-center text-center outline-none"
-          >
-            <span className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-hero shadow-neon transition-transform group-hover:scale-105">
-              <Sparkles size={28} className="text-white" />
-            </span>
-            <span className="text-5xl font-extrabold leading-tight">
-              Welcome to
-              <br />
-              <span className="text-gradient">the Vibe</span>
-            </span>
-            <span className="mt-5 inline-flex items-center gap-2 rounded-full glass px-5 py-3 text-sm font-semibold">
-              Tap to enter <ArrowRight size={16} />
-            </span>
-          </button>
-        ) : (
-          <section className="flex flex-1 flex-col justify-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--neon-cyan)]">
-                Choose your vibe
+        {stage === "hero" && (
+          <section className="grid flex-1 place-items-center py-12 text-center">
+            <div className="max-w-2xl">
+              <p className="mx-auto inline-flex rounded-full border border-white/10 bg-white/8 px-4 py-2 text-[11px] font-black uppercase tracking-[0.25em] text-sky-100">
+                KC NOSTALGIA, NEW VIBE
               </p>
-              <h1 className="mt-3 text-4xl font-extrabold leading-tight">
-                Friends or
+              <h1 className="mt-6 text-4xl font-black leading-tight sm:text-6xl">
+                Find Your Tribe.
                 <br />
-                <span className="text-gradient">Romance</span>
+                <span className="text-gradient">Find Your Vibe.</span>
               </h1>
-            </div>
-
-            <div className="mt-7 grid gap-3">
-              {VIBES.map(({ id, title, sub, icon: Icon, accent }) => {
-                const active = selected === id;
-                return (
-                  <button
-                    type="button"
-                    key={id}
-                    onClick={() => setSelected(id)}
-                    className={`relative overflow-hidden rounded-2xl p-4 text-left transition ${
-                      active ? "glass-strong shadow-neon" : "glass"
-                    }`}
-                  >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${accent} ${active ? "opacity-25" : "opacity-10"}`} />
-                    <div className="relative flex items-center gap-4">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accent}`}>
-                        <Icon size={22} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-base font-bold">{title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-                      </div>
-                      <span
-                        className={`h-3 w-3 rounded-full border ${
-                          active ? "border-white bg-white shadow-glow" : "border-white/40"
-                        }`}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-7 grid gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="min-h-11 rounded-2xl bg-input px-3 text-xs outline-none"
-                >
-                  <option value="">Gender</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="non_binary">Non-binary</option>
-                  <option value="prefer_not">Prefer not to say</option>
-                </select>
-                <input
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className="min-h-11 rounded-2xl bg-input px-3 text-xs outline-none"
-                />
-              </div>
-              <Link
-                to="/login"
-                className="btn-neon flex items-center justify-center gap-2 text-sm"
-              >
-                <Crown size={17} /> Join as Prime Viber
-              </Link>
-              <button
-                type="button"
-                onClick={guestLogin}
-                disabled={guestLoading}
-                className="flex items-center justify-center gap-2 rounded-full glass px-5 py-3 text-sm font-semibold disabled:opacity-70"
-              >
-                {guestLoading ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
-                Guest vibe
+              <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-6 text-slate-300">
+                Join live rooms, meet friends, listen to radio, share voice notes, express your mood, send gifts, play mini games and relive the legendary KC-style community spirit.
+              </p>
+              <button type="button" onClick={() => setWelcomeOpen(true)} className="btn-neon mt-8 inline-flex items-center gap-2 px-7 text-sm">
+                ENTER KC <ArrowRight size={17} />
               </button>
+            </div>
+          </section>
+        )}
+
+        {stage === "entry" && (
+          <section className="mx-auto grid w-full max-w-4xl flex-1 content-center gap-5 py-8 lg:grid-cols-[1fr_1.1fr]">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl shadow-slate-950/30">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-200">User entry</p>
+              <h2 className="mt-3 text-3xl font-black">Choose how you enter</h2>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-300">
+                Profile picture is optional now. You can set it later from the avatar button at the top of chat.
+              </p>
+              <button type="button" onClick={() => setPolicyAction("prime")} className="btn-neon mt-5 flex w-full items-center justify-center gap-2 text-sm">
+                <Crown size={17} /> Registered user login / register
+              </button>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl shadow-slate-950/30">
+              <div className="grid gap-3">
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Display name" maxLength={24} className="h-12 rounded-2xl border border-white/10 bg-slate-950/65 px-4 text-sm font-bold outline-none placeholder:text-slate-500 focus:border-sky-300" />
+                <div className="grid grid-cols-2 gap-3">
+                  <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-slate-950/65 px-4 text-sm font-bold outline-none focus:border-sky-300">
+                    <option value="">Gender optional</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                  <input value={birthYear} onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="Birth year optional" className="h-12 rounded-2xl border border-white/10 bg-slate-950/65 px-4 text-sm font-bold outline-none placeholder:text-slate-500 focus:border-sky-300" />
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {MOODS.map((item) => (
+                    <button key={item} type="button" onClick={() => setMood(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${mood === item ? "bg-sky-500 text-white" : "bg-white/8 text-slate-300"}`}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setPolicyAction("guest")} disabled={loading} className="flex h-12 items-center justify-center gap-2 rounded-full bg-white/10 text-sm font-black text-white disabled:opacity-60">
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
+                  Continue as Guest
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {stage === "rooms" && (
+          <section className="w-full flex-1 py-6">
+            <div className="grid gap-4 lg:grid-cols-2">
+              {ROOMS.map((room) => (
+                <article key={room.id} className={`rounded-[2rem] border border-white/10 bg-gradient-to-br ${room.glow} p-5 shadow-2xl shadow-slate-950/25`}>
+                  <div className="flex items-start gap-4">
+                    <span className="grid size-14 place-items-center rounded-2xl bg-white/10 text-3xl">{room.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-2xl font-black">{room.title}</h2>
+                      <p className="mt-1 text-sm font-semibold leading-6 text-slate-300">{room.sub}</p>
+                      <p className="mt-3 text-xs font-black text-emerald-300">{room.count}</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => enterRoom(room.id)} className="mt-5 h-12 w-full rounded-2xl bg-sky-500 text-sm font-black text-white shadow-lg shadow-sky-500/20">
+                    Enter Room
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[2rem] border border-amber-300/20 bg-amber-300/10 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-lg font-black text-white">Claim Daily Coins</p>
+                  <p className="text-sm font-bold text-amber-100">Claim 50 daily coins and keep your streak alive.</p>
+                </div>
+                <button type="button" onClick={() => toast.success("Daily coins are handled in your wallet/rewards system")} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">
+                  Claim 50
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <GuestExpiryNotice profile={profile} />
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {EARN_CARDS.map(({ icon: Icon, title, value }) => (
+                <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
+                  <Icon className="text-sky-300" size={22} />
+                  <p className="mt-3 text-sm font-black">{title}</p>
+                  <p className="text-xs font-bold text-slate-400">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.06] p-5">
+              <div className="flex items-center gap-2 text-amber-200">
+                <WalletCards size={20} />
+                <h2 className="text-xl font-black text-white">Coin Redemption</h2>
+              </div>
+              <p className="mt-2 text-sm font-semibold text-slate-300">500 coins = ₹1. Redemptions are manually approved by admin.</p>
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {COUPONS.map((coupon) => (
+                  <div key={coupon} className="rounded-2xl border border-white/10 bg-slate-950/55 px-3 py-3 text-center text-sm font-black">
+                    {coupon}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-black">25,000 coins = ₹50 coupon</div>
+                <div className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-black">50,000 coins = ₹100 coupon</div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={() => nav({ to: "/wallet" })} className="rounded-full bg-white/10 px-5 py-3 text-sm font-black">View Rewards</button>
+                <button type="button" onClick={() => nav({ to: "/wallet" })} className="rounded-full bg-sky-500 px-5 py-3 text-sm font-black text-white">Request Redemption</button>
+              </div>
             </div>
           </section>
         )}

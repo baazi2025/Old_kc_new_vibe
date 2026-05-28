@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Heart, Send, Sparkles, VenetianMask, Trash2, Eye, EyeOff } from "lucide-react";
+import { SITE_URL } from "@/lib/seo";
 
 export const Route = createFileRoute("/confessions")({
   head: () => ({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/confessions")({
       { title: "Anonymous Secrets — Vibe Malayali" },
       { name: "description", content: "Share anonymous confessions, secret crushes & emotional vibes." },
     ],
+    links: [{ rel: "canonical", href: `${SITE_URL}/confessions` }],
   }),
   component: ConfessionsPage,
 });

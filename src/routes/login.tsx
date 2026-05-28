@@ -1,12 +1,26 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
+import { CommunityPolicyModal } from "@/components/CommunityPolicyModal";
+import { ProfileFields, validateAdultDob } from "@/components/ProfileFields";
 import { Mail, Phone, Sparkles, UserRound, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { seo } from "@/lib/seo";
+import { cleanUsername, ensureUsernameAvailable } from "@/lib/username";
+import { ensureProfileForUser } from "@/lib/authProfile";
+import { errorMessage } from "@/lib/errorMessage";
+import { useAuth } from "@/hooks/useAuth";
+import { accountTypeForProfile } from "@/lib/account";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Login — Vibe Malayali" }] }),
+  head: () =>
+    seo({
+      title: "Join Vibemalayali Chat | Register or Enter as Guest",
+      description:
+        "Register or enter as a guest to join Vibemalayali Chat rooms, meet Malayali friends, and enjoy voice notes, moods, radio, and mini games.",
+      path: "/login",
+    }),
   component: Login,
 });
 
@@ -16,6 +30,7 @@ type Mode = "signin" | "signup" | "phone";
 
 function Login() {
   const nav = useNavigate();
+  const { user, profile } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [loading, setLoading] = useState(false);
 
@@ -27,57 +42,176 @@ function Login() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [guestName, setGuestName] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
+  const [policyAction, setPolicyAction] = useState<"signup" | "phone" | "guest" | null>(null);
+  const upgradingGuest = Boolean(user && accountTypeForProfile(profile) === "guest");
+
+  useEffect(() => {
+    if (!upgradingGuest) return;
+    setMode("signup");
+    if (profile?.username) setUsername(profile.username);
+    if (profile?.avatar_emoji) setEmoji(profile.avatar_emoji);
+  }, [upgradingGuest, profile?.username, profile?.avatar_emoji]);
 
   function requireProfileDetails() {
     if (!gender) return toast.error("Please choose gender"), false;
     if (!dob) return toast.error("Please enter date of birth"), false;
+    const dobError = validateAdultDob(dob);
+    if (dobError) return toast.error(dobError), false;
     return true;
   }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (username.length < 3) return toast.error("Username must be 3+ chars");
+    if (upgradingGuest) {
+      if (password.length < 6) return toast.error("Password must be 6+ chars");
+      setPolicyAction("signup");
+      return;
+    }
+    const clean = cleanUsername(username);
+    if (clean.length < 3) return toast.error("Username must be 3+ chars");
     if (password.length < 6) return toast.error("Password must be 6+ chars");
     if (!requireProfileDetails()) return;
+    try {
+      const availability = await ensureUsernameAvailable(clean);
+      if (!availability.ok) return toast.error(availability.message);
+      setUsername(availability.username);
+    } catch (error) {
+      return toast.error(errorMessage(error, "Could not check username"));
+    }
+    setPolicyAction("signup");
+  }
+
+  async function executeSignup() {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/chat`,
-        data: { username, avatar_emoji: emoji, gender, dob },
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Check your email to confirm 📧");
+    try {
+      if (upgradingGuest) {
+        if (!email || password.length < 6) {
+          toast.error("Email and 6+ character password are required to save your guest profile.");
+          return;
+        }
+        const { error: updateError } = await supabase.auth.updateUser({
+          email,
+          password,
+          data: { username: username || profile?.username, avatar_emoji: emoji, gender, dob },
+        });
+        if (updateError) {
+          toast.error(updateError.message);
+          return;
+        }
+        const { error: upgradeError } = await (supabase as any).rpc("upgrade_current_guest");
+        if (upgradeError) {
+          toast.error(upgradeError.message);
+          return;
+        }
+        toast.success("Profile saved. Check your email if confirmation is required.");
+        nav({ to: "/chat" });
+        return;
+      }
+
+      const availability = await ensureUsernameAvailable(username);
+      if (!availability.ok) {
+        toast.error(availability.message);
+        return;
+      }
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/chat`,
+          data: { username: availability.username, avatar_emoji: emoji, gender, dob },
+        },
+      });
+      console.info("[signup:response]", {
+        userId: data.user?.id ?? null,
+        hasSession: Boolean(data.session),
+        error: error?.message ?? null,
+      });
+      if (error) {
+        toast.error(`Signup failed: ${error.message}`);
+        return;
+      }
+      if (data.user && data.session) {
+        const profileResult = await ensureProfileForUser(data.user, {
+          username: availability.username,
+          avatar_emoji: emoji,
+          gender,
+          dob,
+          is_guest: false,
+        });
+        console.info("[signup:profile]", {
+          userId: data.user.id,
+          created: profileResult.created,
+          error: profileResult.error?.message ?? null,
+        });
+        if (profileResult.error) {
+          toast.error(`Account created, but profile save failed: ${profileResult.error.message}`);
+          return;
+        }
+      }
+      toast.success(data.session ? "Account created. Entering chat..." : "Check your email to confirm 📧");
+      if (data.session) nav({ to: "/chat" });
+    } catch (error) {
+      console.error("[signup:error]", error);
+      toast.error(errorMessage(error, "Signup failed"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSignin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Welcome back 👋");
-    nav({ to: "/chat" });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      if (data.user) {
+        const profileResult = await ensureProfileForUser(data.user);
+        console.info("[signin:profile-fallback]", {
+          userId: data.user.id,
+          created: profileResult.created,
+          error: profileResult.error?.message ?? null,
+        });
+      }
+      toast.success("Welcome back 👋");
+      nav({ to: "/chat" });
+    } catch (error) {
+      console.error("[signin:error]", error);
+      toast.error(errorMessage(error, "Login failed"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function sendPhoneOtp(e: React.FormEvent) {
     e.preventDefault();
     if (!requireProfileDetails()) return;
-    if (!phone.startsWith("+")) return toast.error("Use +91… format");
+    if (!phone.startsWith("+")) return toast.error("Use +91 format");
+    setPolicyAction("phone");
+  }
+
+  async function executePhoneOtp() {
     setLoading(true);
+    const phoneUsername = username || `user_${phone.slice(-4)}`;
+    const availability = await ensureUsernameAvailable(phoneUsername);
+    if (!availability.ok) {
+      setLoading(false);
+      toast.error(availability.message);
+      return;
+    }
     const { error } = await supabase.auth.signInWithOtp({
       phone,
-      options: { data: { username: username || `user_${phone.slice(-4)}`, avatar_emoji: emoji, gender, dob } },
+      options: { data: { username: availability.username, avatar_emoji: emoji, gender, dob } },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     setOtpSent(true);
-    toast.success("OTP sent 📲");
+    toast.success("OTP sent");
   }
 
   async function verifyPhoneOtp(e: React.FormEvent) {
@@ -91,21 +225,80 @@ function Login() {
   }
 
   async function guestLogin() {
+    const cleanGuestName = cleanUsername(guestName);
+    if (cleanGuestName.length < 2) return toast.error("Please enter your name");
     if (!requireProfileDetails()) return;
+    try {
+      const availability = await ensureUsernameAvailable(cleanGuestName);
+      if (!availability.ok) return toast.error(availability.message);
+      setGuestName(availability.username);
+    } catch (error) {
+      return toast.error(errorMessage(error, "Could not check username"));
+    }
+    setPolicyAction("guest");
+    return;
+  }
+
+  async function executeGuestLogin() {
     setLoading(true);
-    const guestName = `Guest_${Math.random().toString(36).slice(2, 7)}`;
-    const { error } = await supabase.auth.signInAnonymously({
-      options: { data: { username: guestName, avatar_emoji: emoji, gender, dob } },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success(`Vibing as ${guestName}`);
-    nav({ to: "/chat" });
+    try {
+      const availability = await ensureUsernameAvailable(guestName);
+      if (!availability.ok) {
+        toast.error(availability.message);
+        return;
+      }
+      const finalGuestName = availability.username;
+      const { data, error } = await supabase.auth.signInAnonymously({
+        options: { data: { username: finalGuestName, avatar_emoji: emoji, gender, dob } },
+      });
+      if (error) {
+        toast.error(`Guest signup failed: ${error.message}`);
+        return;
+      }
+      if (data.user) {
+        const profileResult = await ensureProfileForUser(data.user, {
+          username: finalGuestName,
+          avatar_emoji: emoji,
+          gender,
+          dob,
+          is_guest: true,
+        });
+        console.info("[guest:profile]", {
+          userId: data.user.id,
+          created: profileResult.created,
+          error: profileResult.error?.message ?? null,
+        });
+        if (profileResult.error) {
+          toast.error(`Guest created, but profile save failed: ${profileResult.error.message}`);
+          return;
+        }
+      }
+      toast.success(`Vibing as ${finalGuestName}`);
+      nav({ to: "/chat" });
+    } catch (error) {
+      console.error("[guest:error]", error);
+      toast.error(errorMessage(error, "Guest login failed"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function acceptPolicy() {
+    const action = policyAction;
+    setPolicyAction(null);
+    if (action === "signup") void executeSignup();
+    if (action === "phone") void executePhoneOtp();
+    if (action === "guest") void executeGuestLogin();
   }
 
   return (
     <div className="relative min-h-screen grid-bg flex flex-col">
       <AmbientOrbs />
+      <CommunityPolicyModal
+        open={policyAction !== null}
+        onClose={() => setPolicyAction(null)}
+        onAccept={acceptPolicy}
+      />
       <div className="mx-auto w-full max-w-md flex-1 px-5 pt-10 pb-8">
         <Link to="/" className="text-xs text-muted-foreground">← Back</Link>
 
@@ -145,13 +338,18 @@ function Login() {
 
           {mode === "signup" && (
             <form onSubmit={handleSignup} className="space-y-3">
+              {upgradingGuest && (
+                <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 px-3 py-3 text-xs font-bold leading-5 text-amber-100">
+                  Register now to keep your guest username, coins, gifts, mood, profile picture, and streak.
+                </div>
+              )}
               <EmojiPicker value={emoji} onChange={setEmoji} />
               <Field icon={<UserRound size={16}/>} placeholder="username (e.g. anju_rj)" value={username} onChange={setUsername} />
-              <ProfileFields gender={gender} setGender={setGender} dob={dob} setDob={setDob} />
+              {!upgradingGuest && <ProfileFields gender={gender} setGender={setGender} dob={dob} setDob={setDob} />}
               <Field icon={<Mail size={16}/>} placeholder="you@vibe.com" value={email} onChange={setEmail} type="email" />
               <Field icon={<Lock size={16}/>} placeholder="Password (6+ chars)" value={password} onChange={setPassword} type="password" />
               <button disabled={loading} className="btn-neon w-full text-sm flex items-center justify-center gap-2">
-                {loading && <Loader2 size={14} className="animate-spin"/>} Create account
+                {loading && <Loader2 size={14} className="animate-spin"/>} {upgradingGuest ? "Register & Save My Profile" : "Create account"}
               </button>
               <p className="font-mal text-[10px] text-muted-foreground text-center">Email-ൽ confirm link വരും ✉️</p>
             </form>
@@ -179,20 +377,27 @@ function Login() {
             </form>
           )}
 
-          <div className="my-5 flex items-center gap-3 text-[10px] text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" />
-          </div>
+          {!upgradingGuest && (
+            <>
+              <div className="my-5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                <div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" />
+              </div>
 
-          <div className="mb-3">
-            <ProfileFields gender={gender} setGender={setGender} dob={dob} setDob={setDob} />
-          </div>
-          <button onClick={guestLogin} disabled={loading} className="w-full rounded-2xl glass py-3 text-xs font-semibold flex items-center justify-center gap-2">
-            <UserRound size={14} /> Continue as Guest
-          </button>
+              <div className="mb-3">
+                <Field icon={<UserRound size={16}/>} placeholder="your name" value={guestName} onChange={setGuestName} />
+              </div>
+              <div className="mb-3">
+                <ProfileFields gender={gender} setGender={setGender} dob={dob} setDob={setDob} />
+              </div>
+              <button onClick={guestLogin} disabled={loading} className="w-full rounded-2xl glass py-3 text-xs font-semibold flex items-center justify-center gap-2">
+                <UserRound size={14} /> Continue as Guest
+              </button>
+            </>
+          )}
         </div>
 
         <p className="font-mal mt-6 text-center text-[11px] text-muted-foreground">
-          തുടരുന്നതിലൂടെ നിങ്ങൾ വ്യവസ്ഥകൾ അംഗീകരിക്കുന്നു
+          à´¤àµà´Ÿà´°àµà´¨àµà´¨à´¤à´¿à´²àµ‚à´Ÿàµ† à´¨à´¿à´™àµà´™àµ¾ à´µàµà´¯à´µà´¸àµà´¥à´•àµ¾ à´…à´‚à´—àµ€à´•à´°à´¿à´•àµà´•àµà´¨àµà´¨àµ
         </p>
       </div>
     </div>
@@ -209,40 +414,6 @@ function Field({ icon, placeholder, value, onChange, type = "text" }: { icon: Re
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-      />
-    </div>
-  );
-}
-
-function ProfileFields({
-  gender,
-  setGender,
-  dob,
-  setDob,
-}: {
-  gender: string;
-  setGender: (v: string) => void;
-  dob: string;
-  setDob: (v: string) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <select
-        value={gender}
-        onChange={(e) => setGender(e.target.value)}
-        className="min-h-11 rounded-2xl bg-input px-3 text-xs outline-none"
-      >
-        <option value="">Gender</option>
-        <option value="female">Female</option>
-        <option value="male">Male</option>
-        <option value="non_binary">Non-binary</option>
-        <option value="prefer_not">Prefer not to say</option>
-      </select>
-      <input
-        type="date"
-        value={dob}
-        onChange={(e) => setDob(e.target.value)}
-        className="min-h-11 rounded-2xl bg-input px-3 text-xs outline-none"
       />
     </div>
   );
@@ -267,3 +438,5 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
     </div>
   );
 }
+
+

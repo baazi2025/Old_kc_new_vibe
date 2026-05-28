@@ -10,12 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as SupabaseTestRouteImport } from './routes/supabase-test'
+import { Route as RadioRouteImport } from './routes/radio'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PodcastsRouteImport } from './routes/podcasts'
+import { Route as MalayalamVoiceChatRouteImport } from './routes/malayalam-voice-chat'
+import { Route as MalayalamChatRoomRouteImport } from './routes/malayalam-chat-room'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GulfMalayaliChatRouteImport } from './routes/gulf-malayali-chat'
 import { Route as GiftsRouteImport } from './routes/gifts'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as DmRouteImport } from './routes/dm'
 import { Route as ConfessionsRouteImport } from './routes/confessions'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AnonymousMalayalamChatRouteImport } from './routes/anonymous-malayalam-chat'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DmUserIdRouteImport } from './routes/dm.$userId'
 
@@ -24,9 +34,44 @@ const WalletRoute = WalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SupabaseTestRoute = SupabaseTestRouteImport.update({
+  id: '/supabase-test',
+  path: '/supabase-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadioRoute = RadioRouteImport.update({
+  id: '/radio',
+  path: '/radio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PodcastsRoute = PodcastsRouteImport.update({
+  id: '/podcasts',
+  path: '/podcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MalayalamVoiceChatRoute = MalayalamVoiceChatRouteImport.update({
+  id: '/malayalam-voice-chat',
+  path: '/malayalam-voice-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MalayalamChatRoomRoute = MalayalamChatRoomRouteImport.update({
+  id: '/malayalam-chat-room',
+  path: '/malayalam-chat-room',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GulfMalayaliChatRoute = GulfMalayaliChatRouteImport.update({
+  id: '/gulf-malayali-chat',
+  path: '/gulf-malayali-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GiftsRoute = GiftsRouteImport.update({
@@ -54,6 +99,21 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnonymousMalayalamChatRoute = AnonymousMalayalamChatRouteImport.update({
+  id: '/anonymous-malayalam-chat',
+  path: '/anonymous-malayalam-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,35 +127,65 @@ const DmUserIdRoute = DmUserIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/anonymous-malayalam-chat': typeof AnonymousMalayalamChatRoute
   '/chat': typeof ChatRoute
   '/confessions': typeof ConfessionsRoute
   '/dm': typeof DmRouteWithChildren
   '/games': typeof GamesRoute
   '/gifts': typeof GiftsRoute
+  '/gulf-malayali-chat': typeof GulfMalayaliChatRoute
   '/login': typeof LoginRoute
+  '/malayalam-chat-room': typeof MalayalamChatRoomRoute
+  '/malayalam-voice-chat': typeof MalayalamVoiceChatRoute
+  '/podcasts': typeof PodcastsRoute
+  '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
+  '/supabase-test': typeof SupabaseTestRoute
   '/wallet': typeof WalletRoute
   '/dm/$userId': typeof DmUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/anonymous-malayalam-chat': typeof AnonymousMalayalamChatRoute
   '/chat': typeof ChatRoute
   '/confessions': typeof ConfessionsRoute
   '/dm': typeof DmRouteWithChildren
   '/games': typeof GamesRoute
   '/gifts': typeof GiftsRoute
+  '/gulf-malayali-chat': typeof GulfMalayaliChatRoute
   '/login': typeof LoginRoute
+  '/malayalam-chat-room': typeof MalayalamChatRoomRoute
+  '/malayalam-voice-chat': typeof MalayalamVoiceChatRoute
+  '/podcasts': typeof PodcastsRoute
+  '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
+  '/supabase-test': typeof SupabaseTestRoute
   '/wallet': typeof WalletRoute
   '/dm/$userId': typeof DmUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/anonymous-malayalam-chat': typeof AnonymousMalayalamChatRoute
   '/chat': typeof ChatRoute
   '/confessions': typeof ConfessionsRoute
   '/dm': typeof DmRouteWithChildren
   '/games': typeof GamesRoute
   '/gifts': typeof GiftsRoute
+  '/gulf-malayali-chat': typeof GulfMalayaliChatRoute
   '/login': typeof LoginRoute
+  '/malayalam-chat-room': typeof MalayalamChatRoomRoute
+  '/malayalam-voice-chat': typeof MalayalamVoiceChatRoute
+  '/podcasts': typeof PodcastsRoute
+  '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
+  '/supabase-test': typeof SupabaseTestRoute
   '/wallet': typeof WalletRoute
   '/dm/$userId': typeof DmUserIdRoute
 }
@@ -103,46 +193,86 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
+    | '/admin'
+    | '/anonymous-malayalam-chat'
     | '/chat'
     | '/confessions'
     | '/dm'
     | '/games'
     | '/gifts'
+    | '/gulf-malayali-chat'
     | '/login'
+    | '/malayalam-chat-room'
+    | '/malayalam-voice-chat'
+    | '/podcasts'
+    | '/profile'
+    | '/radio'
+    | '/supabase-test'
     | '/wallet'
     | '/dm/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/admin'
+    | '/anonymous-malayalam-chat'
     | '/chat'
     | '/confessions'
     | '/dm'
     | '/games'
     | '/gifts'
+    | '/gulf-malayali-chat'
     | '/login'
+    | '/malayalam-chat-room'
+    | '/malayalam-voice-chat'
+    | '/podcasts'
+    | '/profile'
+    | '/radio'
+    | '/supabase-test'
     | '/wallet'
     | '/dm/$userId'
   id:
     | '__root__'
     | '/'
+    | '/about'
+    | '/admin'
+    | '/anonymous-malayalam-chat'
     | '/chat'
     | '/confessions'
     | '/dm'
     | '/games'
     | '/gifts'
+    | '/gulf-malayali-chat'
     | '/login'
+    | '/malayalam-chat-room'
+    | '/malayalam-voice-chat'
+    | '/podcasts'
+    | '/profile'
+    | '/radio'
+    | '/supabase-test'
     | '/wallet'
     | '/dm/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
+  AnonymousMalayalamChatRoute: typeof AnonymousMalayalamChatRoute
   ChatRoute: typeof ChatRoute
   ConfessionsRoute: typeof ConfessionsRoute
   DmRoute: typeof DmRouteWithChildren
   GamesRoute: typeof GamesRoute
   GiftsRoute: typeof GiftsRoute
+  GulfMalayaliChatRoute: typeof GulfMalayaliChatRoute
   LoginRoute: typeof LoginRoute
+  MalayalamChatRoomRoute: typeof MalayalamChatRoomRoute
+  MalayalamVoiceChatRoute: typeof MalayalamVoiceChatRoute
+  PodcastsRoute: typeof PodcastsRoute
+  ProfileRoute: typeof ProfileRoute
+  RadioRoute: typeof RadioRoute
+  SupabaseTestRoute: typeof SupabaseTestRoute
   WalletRoute: typeof WalletRoute
 }
 
@@ -155,11 +285,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/supabase-test': {
+      id: '/supabase-test'
+      path: '/supabase-test'
+      fullPath: '/supabase-test'
+      preLoaderRoute: typeof SupabaseTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radio': {
+      id: '/radio'
+      path: '/radio'
+      fullPath: '/radio'
+      preLoaderRoute: typeof RadioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/podcasts': {
+      id: '/podcasts'
+      path: '/podcasts'
+      fullPath: '/podcasts'
+      preLoaderRoute: typeof PodcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/malayalam-voice-chat': {
+      id: '/malayalam-voice-chat'
+      path: '/malayalam-voice-chat'
+      fullPath: '/malayalam-voice-chat'
+      preLoaderRoute: typeof MalayalamVoiceChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/malayalam-chat-room': {
+      id: '/malayalam-chat-room'
+      path: '/malayalam-chat-room'
+      fullPath: '/malayalam-chat-room'
+      preLoaderRoute: typeof MalayalamChatRoomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gulf-malayali-chat': {
+      id: '/gulf-malayali-chat'
+      path: '/gulf-malayali-chat'
+      fullPath: '/gulf-malayali-chat'
+      preLoaderRoute: typeof GulfMalayaliChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gifts': {
@@ -197,6 +376,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/anonymous-malayalam-chat': {
+      id: '/anonymous-malayalam-chat'
+      path: '/anonymous-malayalam-chat'
+      fullPath: '/anonymous-malayalam-chat'
+      preLoaderRoute: typeof AnonymousMalayalamChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -226,12 +426,22 @@ const DmRouteWithChildren = DmRoute._addFileChildren(DmRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
+  AnonymousMalayalamChatRoute: AnonymousMalayalamChatRoute,
   ChatRoute: ChatRoute,
   ConfessionsRoute: ConfessionsRoute,
   DmRoute: DmRouteWithChildren,
   GamesRoute: GamesRoute,
   GiftsRoute: GiftsRoute,
+  GulfMalayaliChatRoute: GulfMalayaliChatRoute,
   LoginRoute: LoginRoute,
+  MalayalamChatRoomRoute: MalayalamChatRoomRoute,
+  MalayalamVoiceChatRoute: MalayalamVoiceChatRoute,
+  PodcastsRoute: PodcastsRoute,
+  ProfileRoute: ProfileRoute,
+  RadioRoute: RadioRoute,
+  SupabaseTestRoute: SupabaseTestRoute,
   WalletRoute: WalletRoute,
 }
 export const routeTree = rootRouteImport

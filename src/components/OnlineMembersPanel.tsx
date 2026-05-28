@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Users, X, Radio, Anchor, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +8,11 @@ type Presence = {
   user_id: string;
   username: string;
   avatar_emoji: string;
+  avatar_url?: string | null;
   is_rj?: boolean;
   is_anchor?: boolean;
+  account_type?: string | null;
+  guest_expires_at?: string | null;
   online_at: string;
 };
 
@@ -33,7 +36,8 @@ export function OnlineMembersPanel() {
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState() as Record<string, Presence[]>;
       const flat = Object.values(state).flat();
-      const unique = Array.from(new Map(flat.map((p) => [p.user_id, p])).values());
+      const unique = Array.from(new Map(flat.map((p) => [p.user_id, p])).values())
+        .filter((p) => p.account_type !== "guest" || !p.guest_expires_at || new Date(p.guest_expires_at).getTime() > Date.now());
       unique.sort((a, b) => (a.username || "").localeCompare(b.username || ""));
       setMembers(unique);
     }).subscribe(async (status) => {
@@ -42,8 +46,11 @@ export function OnlineMembersPanel() {
           user_id: user.id,
           username: profile?.username ?? "guest",
           avatar_emoji: profile?.avatar_emoji ?? "🧑",
+          avatar_url: profile?.avatar_url ?? null,
           is_rj: (profile as Profile | null)?.is_rj ?? false,
           is_anchor: (profile as Profile | null)?.is_anchor ?? false,
+          account_type: profile?.account_type ?? (profile?.is_guest ? "guest" : "registered"),
+          guest_expires_at: profile?.guest_expires_at ?? null,
           online_at: new Date().toISOString(),
         });
       }
@@ -80,7 +87,7 @@ export function OnlineMembersPanel() {
         />
       )}
 
-      {/* Panel — drawer on mobile, fixed sidebar on desktop */}
+      {/* Panel: drawer on mobile, fixed sidebar on desktop */}
       <aside
         className={`fixed top-0 right-0 z-[61] h-full w-[280px] glass-strong border-l border-white/10
           transition-transform duration-300 ease-out
@@ -117,7 +124,11 @@ export function OnlineMembersPanel() {
                   ${isMe ? "bg-hero/20" : "hover:bg-white/5 active:scale-[0.98]"}`}
               >
                 <div className="relative h-9 w-9 shrink-0 rounded-full glass flex items-center justify-center text-lg">
-                  {m.avatar_emoji}
+                  {m.avatar_url ? (
+                    <img src={m.avatar_url} alt={`${m.username} profile`} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    m.avatar_emoji
+                  )}
                   <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-background shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -151,3 +162,5 @@ export function OnlineMembersPanel() {
     </>
   );
 }
+
+

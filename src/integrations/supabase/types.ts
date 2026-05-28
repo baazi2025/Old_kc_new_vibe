@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       confession_likes: {
         Row: {
           confession_id: string
@@ -139,38 +157,107 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_events: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          event_type: string
+          id: string
+          locale: string | null
+          path: string
+          referrer: string | null
+          region: string | null
+          room_id: string | null
+          timezone: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          locale?: string | null
+          path?: string
+          referrer?: string | null
+          region?: string | null
+          room_id?: string | null
+          timezone?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          locale?: string | null
+          path?: string
+          referrer?: string | null
+          region?: string | null
+          room_id?: string | null
+          timezone?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_emoji: string
+          bio: string | null
           coins: number
           created_at: string
+          display_name: string | null
+          dm_enabled: boolean
           id: string
           is_anchor: boolean
           is_guest: boolean
           is_rj: boolean
+          message_color: string | null
+          status_text: string | null
           username: string
+          username_color: string | null
           voice_notes_count: number
         }
         Insert: {
           avatar_emoji?: string
+          bio?: string | null
           coins?: number
           created_at?: string
+          display_name?: string | null
+          dm_enabled?: boolean
           id: string
           is_anchor?: boolean
           is_guest?: boolean
           is_rj?: boolean
+          message_color?: string | null
+          status_text?: string | null
           username: string
+          username_color?: string | null
           voice_notes_count?: number
         }
         Update: {
           avatar_emoji?: string
+          bio?: string | null
           coins?: number
           created_at?: string
+          display_name?: string | null
+          dm_enabled?: boolean
           id?: string
           is_anchor?: boolean
           is_guest?: boolean
           is_rj?: boolean
+          message_color?: string | null
+          status_text?: string | null
           username?: string
+          username_color?: string | null
           voice_notes_count?: number
         }
         Relationships: []

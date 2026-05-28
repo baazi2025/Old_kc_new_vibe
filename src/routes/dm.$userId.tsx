@@ -8,9 +8,13 @@ import { ArrowLeft, Mic, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { SITE_URL } from "@/lib/seo";
 
 export const Route = createFileRoute("/dm/$userId")({
-  head: () => ({ meta: [{ title: "Private Chat — Vibe Malayali" }] }),
+  head: () => ({
+    meta: [{ title: "Private Chat | Vibe Malayali" }, { name: "robots", content: "noindex,nofollow" }],
+    links: [{ rel: "canonical", href: `${SITE_URL}/dm` }],
+  }),
   component: DMConversation,
 });
 
@@ -99,6 +103,14 @@ function DMConversation() {
 
   async function send() {
     if (!text.trim() || !user) return;
+    if (userId === user.id) {
+      toast.error("You cannot send a DM to yourself");
+      return;
+    }
+    if (peer?.dm_enabled === false) {
+      toast("This user is not open for private messages.");
+      return;
+    }
     const body = text.trim();
     setText("");
     if (isSpecialEmoji(body)) {

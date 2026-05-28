@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#06111f"/>
+      <stop offset="0.5" stop-color="#17112d"/>
+      <stop offset="1" stop-color="#053022"/>
+    </linearGradient>
+    <linearGradient id="neon" x1="0" x2="1">
+      <stop stop-color="#22d3ee"/>
+      <stop offset="0.55" stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="140" cy="110" r="170" fill="#22d3ee" opacity="0.16"/>
+  <circle cx="1050" cy="145" r="210" fill="#ec4899" opacity="0.14"/>
+  <circle cx="920" cy="560" r="180" fill="#34d399" opacity="0.13"/>
+  <rect x="74" y="70" width="1052" height="490" rx="42" fill="#07101f" opacity="0.78" stroke="#ffffff" stroke-opacity="0.14"/>
+  <rect x="106" y="102" width="92" height="92" rx="24" fill="url(#neon)" filter="url(#glow)"/>
+  <text x="152" y="161" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="900" fill="#fff">KC</text>
+  <text x="226" y="145" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="#fff">Vibemalayali Chat</text>
+  <text x="226" y="183" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#b8d8ff">Malayali community chat rooms, radio, voice notes and friendship vibes</text>
+  <text x="110" y="292" font-family="Arial, sans-serif" font-size="58" font-weight="900" fill="#fff">Connect with Malayalis Worldwide</text>
+  <text x="112" y="346" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#d7e5ff">Live rooms • Online radio • Podcasts • Mini games • Moods</text>
+  <g transform="translate(120 405)">
+    <rect width="230" height="76" rx="24" fill="#0d2740" stroke="#22d3ee" stroke-opacity="0.35"/>
+    <text x="30" y="48" font-family="Arial, sans-serif" font-size="25" font-weight="900" fill="#fff">Chat Rooms</text>
+  </g>
+  <g transform="translate(378 405)">
+    <rect width="200" height="76" rx="24" fill="#2a1434" stroke="#ec4899" stroke-opacity="0.35"/>
+    <text x="30" y="48" font-family="Arial, sans-serif" font-size="25" font-weight="900" fill="#fff">Radio</text>
+  </g>
+  <g transform="translate(606 405)">
+    <rect width="250" height="76" rx="24" fill="#0d3026" stroke="#34d399" stroke-opacity="0.35"/>
+    <text x="30" y="48" font-family="Arial, sans-serif" font-size="25" font-weight="900" fill="#fff">Voice Notes</text>
+  </g>
+  <g transform="translate(884 405)">
+    <rect width="190" height="76" rx="24" fill="#33260d" stroke="#facc15" stroke-opacity="0.35"/>
+    <text x="30" y="48" font-family="Arial, sans-serif" font-size="25" font-weight="900" fill="#fff">Friends</text>
+  </g>
+</svg>
