@@ -31,7 +31,7 @@ const ROMANCE_LEGENDS: Legend[] = [
   { icon: "🌀", name: "Zaya & Siya", caption: "confusion twins powered by chaos" },
   { icon: "💌", name: "Soul For You", caption: "flirting department chairman" },
   { icon: "👻", name: "Paavam Jinn", caption: "chill guy… until provoked....😤" },
-  { icon: "🌧️", name: "Monalisa", caption: "Punyalan's partner in crime" },
+  { icon: "🌧️", name: "Black Pearl", caption: "Punyalan's partner in crime" },
   { icon: "✨", name: "Chaithra", caption: "innocent face, dangerous typing speed" },
   { icon: "🚨", name: "F37", caption: "nobody still knows what F means" },
   { icon: "😎", name: "Paavam VIP", caption: "cashew nut wholesaler with VIP emotions" },
@@ -42,7 +42,7 @@ const FRIENDS_LEGENDS: Legend[] = [
   { icon: "🎙️", name: "CM", caption: "mic smoothness level: dangerous" },
   { icon: "🦠", name: "Covidian", caption: "survived every online generation update" },
   { icon: "😎", name: "Vishnu", caption: "Ladies First Movement founder" },
-  { icon: "🎭", name: "Masterpiece", caption: "witty counter chatter and certified pickup line specialist" },
+  { icon: "🎭", name: "Masterpiece", caption: "witty counter chatter & certified pickup line specialist" },
   { icon: "🔥", name: "Samantha", caption: "Feminist with a Dangerous rasting skill" },
   { icon: "💪🎤", name: "Shaaz003", caption: "gym body, singer soul" },
   { icon: "👀", name: "Bheegaran", caption: "permanently online, never type a word" },
@@ -51,7 +51,7 @@ const FRIENDS_LEGENDS: Legend[] = [
   { icon: "🎼", name: "Ewarr", caption: "philosopher with background music" },
   { icon: "❄️", name: "Snowy", caption: "spicy counter queen with unlimited battery" },
   { icon: "🎵", name: "Vaigakutty", caption: "singer with permanent sanchari mode enabled" },
-  { icon: "💉❤️", name: "Arya", caption: 'female version of "Pavam Jinn"' },
+  { icon: "💉❤️", name: "Arya", caption: 'female version of "Pavam Jinn" 😂' },
   { icon: "😂🎶", name: "Gopika", caption: "laughter soundtrack enabled" },
 ];
 
@@ -238,6 +238,112 @@ export function KcWelcomeOverlay({
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950/82 text-white backdrop-blur-xl animate-in fade-in duration-500">
+    <style>{`
+      .welcome-scroll-fade {
+        mask-image: linear-gradient(to bottom, black 0, black calc(100% - 20px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 0, black calc(100% - 20px), transparent 100%);
+      }
+      .welcome-room-group {
+        border-radius: 1.5rem;
+        border: 1px solid oklch(1 0 0 / 0.1);
+        background: linear-gradient(135deg, oklch(0.16 0.04 260 / 0.78), oklch(0.11 0.03 250 / 0.86));
+        padding: 0.85rem;
+        box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 18px 42px oklch(0 0 0 / 0.24);
+      }
+      .welcome-room-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.625rem;
+        margin-top: 0.75rem;
+      }
+      @media (min-width: 640px) {
+        .welcome-room-group { padding: 1rem; }
+        .welcome-room-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.75rem;
+        }
+      }
+      .welcome-room-card {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: 100%;
+        min-height: 4.05rem;
+        border-radius: 1rem;
+        border: 1px solid oklch(1 0 0 / 0.12);
+        background:
+          radial-gradient(circle at 0 0, oklch(1 0 0 / 0.08), transparent 34%),
+          linear-gradient(135deg, oklch(0.2 0.05 260 / 0.86), oklch(0.13 0.04 250 / 0.9));
+        padding: 0.65rem;
+        box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.07), 0 14px 32px oklch(0 0 0 / 0.24);
+        transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+        box-sizing: border-box;
+      }
+      .welcome-room-card:hover { transform: translateY(-1px); }
+      @media (min-width: 640px) {
+        .welcome-room-card {
+          gap: 0.75rem;
+          min-height: 4.65rem;
+          border-radius: 1.15rem;
+          padding: 0.75rem;
+          max-width: none;
+        }
+      }
+      .welcome-room-card--romance {
+        border-color: oklch(0.76 0.2 342 / 0.32);
+        background:
+          radial-gradient(circle at 0 0, oklch(0.74 0.22 342 / 0.18), transparent 38%),
+          linear-gradient(135deg, oklch(0.2 0.08 330 / 0.88), oklch(0.12 0.04 265 / 0.9));
+        box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 16px 34px oklch(0.7 0.2 342 / 0.16);
+      }
+      .welcome-room-card--friends {
+        border-color: oklch(0.72 0.16 250 / 0.34);
+        background:
+          radial-gradient(circle at 0 0, oklch(0.72 0.16 250 / 0.18), transparent 38%),
+          linear-gradient(135deg, oklch(0.19 0.07 255 / 0.9), oklch(0.12 0.04 285 / 0.9));
+        box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 16px 34px oklch(0.58 0.17 250 / 0.16);
+      }
+      .kc-legends-strip {
+        position: relative;
+        overflow: hidden;
+        border-radius: 999px;
+        border: 1px solid oklch(0.86 0.14 82 / 0.24);
+        background: linear-gradient(90deg, oklch(0.14 0.04 260 / 0.82), oklch(0.2 0.05 280 / 0.58));
+        box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 12px 34px oklch(0 0 0 / 0.2);
+      }
+      .kc-legends-strip::before, .kc-legends-strip::after {
+        content: "";
+        position: absolute;
+        top: 0; bottom: 0;
+        z-index: 2;
+        width: 34px;
+        pointer-events: none;
+      }
+      .kc-legends-strip::before {
+        left: 0;
+        background: linear-gradient(to right, oklch(0.14 0.04 260), transparent);
+      }
+      .kc-legends-strip::after {
+        right: 0;
+        background: linear-gradient(to left, oklch(0.16 0.05 280), transparent);
+      }
+      @keyframes kc-legends-marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .kc-legends-marquee {
+        display: flex;
+        width: max-content;
+        gap: 1.4rem;
+        padding: 0.65rem 1.1rem;
+        color: oklch(0.92 0.05 88);
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
+        animation: kc-legends-marquee 34s linear infinite;
+      }
+      .kc-legends-strip:hover .kc-legends-marquee { animation-play-state: paused; }
+    `}</style>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <span className="absolute left-[12%] top-[18%] size-1 rounded-full bg-sky-200/80 animate-pulse" />
         <span className="absolute left-[74%] top-[14%] size-1.5 rounded-full bg-pink-200/70 animate-pulse" />
